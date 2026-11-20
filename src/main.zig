@@ -4,42 +4,29 @@
 
 const std = @import("std");
 pub const lbm = @import("lbm.zig");
+pub const fieldio = @import("fieldio.zig");
+pub const validate = @import("validate.zig");
+pub const cli = @import("cli.zig");
 
-pub fn main() !void {
-    var grid = lbm.Grid.init();
+pub fn main(init: std.process.Init) !u8 {
+    const io = init.io;
+    const gpa = init.gpa;
+    const argv = try init.minimal.args.toSlice(init.arena.allocator());
 
-    std.debug.print("Halite: Running 50 deterministic LBM simulation steps ({d}x{d} grid)...\n", .{
-        lbm.WIDTH,
-        lbm.HEIGHT,
-    });
+    var out_buf: [16 * 1024]u8 = undefined;
+    var out = std.Io.File.stdout().writerStreaming(io, &out_buf);
+    var err_buf: [1024]u8 = undefined;
+    var err = std.Io.File.stderr().writerStreaming(io, &err_buf);
 
-    for (0..50) |_| {
-        grid.step();
-    }
+    const args = try init.arena.allocator().alloc([]const u8, argv.len -| 1);
+    for (args, 0..) |*a, i| a.* = argv[i + 1];
 
-    grid.renderToRgba();
-    std.debug.print("Halite: 50 steps completed. Bit-for-bit frame digest calculated.\n", .{});
+    const code = try cli.dispatch(io, gpa, &out.interface, &err.interface, args);
+    try out.interface.flush();
+    try err.interface.flush();
+    return code;
 }
 
-test "Deterministic LBM simulation produces consistent state" {
-    var grid1 = lbm.Grid.init();
-    var grid2 = lbm.Grid.init();
-
-    for (0..10) |_| {
-        grid1.step();
-        grid2.step();
-    }
-
-    grid1.renderToRgba();
-    grid2.renderToRgba();
-
-    try std.testing.expectEqualSlices(u8, &grid1.rgba, &grid2.rgba);
-}
-
-test "Obstacle cell setting works" {
-    var grid = lbm.Grid.init();
-    grid.setObstacleCell(10, 10, true);
-    try std.testing.expect(grid.solid[10 * lbm.WIDTH + 10]);
-    grid.setObstacleCell(10, 10, false);
-    try std.testing.expect(!grid.solid[10 * lbm.WIDTH + 10]);
+test {
+    _ = @import("tests.zig");
 }
