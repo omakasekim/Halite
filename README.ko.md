@@ -4,7 +4,7 @@
 
 부동 소수점 비결정론(floating-point nondeterminism)을 완전히 배제하고 D2Q9 격자 볼츠만 방법(Lattice Boltzmann Method, LBM)을 비트 패킹 정수 연산으로 구현한 2차원 유체역학 시뮬레이션 엔진입니다.
 
-[English Documentation](README.md) • [Interactive WebAssembly Demo](https://aetherx86.github.io/halite/)
+[English Documentation](README.md) • [Interactive WebAssembly Demo](https://omakasekim.github.io/halite/)
 
 ## 아키텍처
 
